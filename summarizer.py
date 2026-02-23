@@ -36,14 +36,23 @@ async def summarize_chunk(session: aiohttp.ClientSession, chunk: str, character_
         "temperature": 0.5
     }
     
-    try:
-        async with session.post(config.SUMMARY_MODEL_URL, json=payload, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json()
-            return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        print(f"API Error: {e}")
-        return f"[Summarization Error: {e}]"
+    max_retries = 5
+    base_delay = 2  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            async with session.post(config.SUMMARY_MODEL_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=180)) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
+                print(f"API Error: {e}. Retrying in {delay} seconds (Attempt {attempt + 1}/{max_retries})...")
+                await asyncio.sleep(delay)
+            else:
+                print(f"API Error: {e}. Max retries reached.")
+                return f"[Summarization Error: Max retries reached after {max_retries} attempts - {e}]"
 
 def chunk_memories(memories: list, max_tokens: int) -> list:
     chunks = []
