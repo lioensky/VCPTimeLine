@@ -1,3 +1,4 @@
+import calendar
 import os
 
 def get_timeline_dir(character_name: str) -> str:
@@ -23,9 +24,11 @@ def save_month_summary(character_name: str, ym: str, content: str):
     dir_name = get_timeline_dir(character_name)
     file_path = os.path.join(dir_name, f"{ym}.md")
     
-    # Prepend the title
+    # Prepend the database-compatible timestamp signature and title
     year, month = ym.split("-")
+    last_day = calendar.monthrange(int(year), int(month))[1]
+    timestamp_signature = f"[{int(year)}-{int(month)}-{last_day}] - {character_name}\n"
     title = f"# {year}年{month}月{character_name}时间线\n\n"
     
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(title + content)
+        f.write(timestamp_signature + title + content)
