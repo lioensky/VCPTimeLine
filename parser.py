@@ -50,6 +50,14 @@ def should_ignore_dir(dir_path):
             return True
     return False
 
+def should_scan_top_level_dir(dir_name, character_name):
+    """
+    Only scan top-level folders that start with the character name or public prefixes.
+    For example, character "小克" will scan "小克知识", "小克学习", "公共知识", "公共记忆".
+    """
+    allowed_prefixes = [character_name] + config.PUBLIC_FOLDER_PREFIXES
+    return any(dir_name.startswith(prefix) for prefix in allowed_prefixes)
+
 def discover_memories(character_name, start_year_month, end_year_month):
     """
     TraverseMEMORY_BASE_PATH, filter by date and character, read contents.
@@ -65,9 +73,15 @@ def discover_memories(character_name, start_year_month, end_year_month):
     start_ym = start_year_month.strip()
     end_ym = end_year_month.strip()
 
+    base_path_norm = os.path.normpath(base_path)
+
     for root, dirs, files in os.walk(base_path):
-        # Filter directories in-place to avoid parsing ignored folders
+        # Filter directories in-place to avoid parsing ignored folders.
         dirs[:] = [d for d in dirs if not should_ignore_dir(os.path.join(root, d))]
+
+        # At the memory base root, only enter folders for this character or public folders.
+        if os.path.normpath(root) == base_path_norm:
+            dirs[:] = [d for d in dirs if should_scan_top_level_dir(d, character_name)]
         
         for file in files:
             if file.lower().endswith(('.txt', '.md')):

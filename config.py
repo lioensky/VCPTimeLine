@@ -15,6 +15,10 @@ MEMORY_BASE_PATH = os.getenv("MEMORY_BASE_PATH", "")
 ignore_str = os.getenv("IGNORE_FOLDERS", "")
 IGNORE_FOLDERS = [f.strip() for f in ignore_str.split(",") if f.strip()]
 
+# Only scan top-level folders whose names start with the character name or public prefixes.
+public_prefixes_str = os.getenv("PUBLIC_FOLDER_PREFIXES", "公共")
+PUBLIC_FOLDER_PREFIXES = [f.strip() for f in public_prefixes_str.split(",") if f.strip()]
+
 def validate_config():
     errors = []
     if not SUMMARY_MODEL_API_KEY:
