@@ -18,9 +18,10 @@ async def summarize_chunk(session: aiohttp.ClientSession, chunk: str, character_
     """
     Call the OpenAI API to summarize a chunk.
     """
-    sys_prompt = f"你是一个个人记忆整理助手。请以第三人称客观视角（例如：'{character_name}这个月做了……'），将以下收集到的杂乱日记和记忆碎片进行归纳提炼。要求：1. 简明扼要，按照逻辑串联。2. 提取出所有核心事件，不遗漏重要信息。3. 纯文本或简单Markdown排版，无需过渡性废话。"
+    tag_instruction = "请在输出正文的最后单独追加一行标签，格式必须为：Tag: 标签1, 标签2, 标签3。标签应提炼本月记忆中最关键的主题、事件、主题、地点、情绪或长期线索，使用中文逗号或英文逗号分隔均可。示例：Tag: 真实承诺PTSD, 特拉维夫裸奔恐慌, 政治不可能三角, 优势策略崩溃, 2026美伊战争, 懂王选举心理学"
+    sys_prompt = f"你是一个个人记忆整理助手。请以第三人称客观视角（例如：'{character_name}这个月做了……'），将以下收集到的杂乱日记和记忆碎片进行归纳提炼。要求：1. 简明扼要，按照逻辑串联。2. 提取出所有核心事件，不遗漏重要信息。3. 纯文本或简单Markdown排版，无需过渡性废话。4. 本阶段是分块中间总结，不要输出Tag标签行。"
     if is_final:
-        sys_prompt = f"你是一个个人记忆整理助手。以下是分段总结后的{character_name}的本月部分记忆流。请将它们整合成一个连贯、完整的本月整体总结报告，以第三人称视角表述（例如：'{character_name}这个月……'）。涵盖全部核心事件，不遗漏。"
+        sys_prompt = f"你是一个个人记忆整理助手。以下内容是{character_name}的本月记忆流或分段总结。请将它们整合成一个连贯、完整的本月整体总结报告，以第三人称视角表述（例如：'{character_name}这个月……'）。涵盖全部核心事件，不遗漏。最后只保留一个最终标签行，不要保留或生成多个标签行。{tag_instruction}"
 
     headers = {
         "Authorization": f"Bearer {config.SUMMARY_MODEL_API_KEY}",
@@ -88,8 +89,8 @@ async def process_month(memories: list, character_name: str, update_status_cb=No
     
     async with aiohttp.ClientSession() as session:
         if len(chunks) == 1:
-            # Single API call
-            return await summarize_chunk(session, chunks[0], character_name, is_final=False)
+            # Single API call, directly produce the final monthly summary with tags.
+            return await summarize_chunk(session, chunks[0], character_name, is_final=True)
         else:
             # Concurrent API calls constrained by MAX_CONCURRENT_TASKS
             sem = asyncio.Semaphore(config.MAX_CONCURRENT_TASKS)
