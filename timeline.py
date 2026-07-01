@@ -1,12 +1,14 @@
 import calendar
 import os
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parent
 
 def get_timeline_dir(character_name: str) -> str:
-    """Returns the timeline directory path for a character, creating it if needed."""
-    dir_name = f"{character_name}timeline"
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    return dir_name
+    """Returns the absolute timeline directory path for a character, creating it if needed."""
+    dir_path = PROJECT_DIR / f"{character_name}timeline"
+    dir_path.mkdir(parents=True, exist_ok=True)
+    return str(dir_path)
 
 def get_summarized_months(character_name: str, start_ym: str, end_ym: str) -> set:
     """Returns a set of YYYY-MM strings that already have markdown files."""
